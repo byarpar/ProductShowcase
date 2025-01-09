@@ -2,25 +2,104 @@ import clientPromise from '@/lib/mongodb'
 
 import Image from 'next/image'
 import { ObjectId } from 'mongodb'
-import ProductUploadForm from '@/components/ProductUploadForm';
+import { Suspense } from 'react'
+import ProductUploadForm from '@/components/ProductUploadForm'
 
 interface Product {
-  _id: ObjectId;
-  name: string;
-  description: string;
-  price: number;
+  _id: ObjectId
+  name: string
+  description: string
+  price: number
   image: {
-    data: string;
-    contentType: string;
-  };
-  createdAt: Date;
+    data: string
+    contentType: string
+  }
+  createdAt: Date
 }
 
 async function getProducts(): Promise<Product[]> {
-  const client = await clientPromise
-  const db = client.db('productDatabase')
-  const products = await db.collection<Product>('products').find({}).sort({ createdAt: -1 }).toArray()
-  return products
+  try {
+    const client = await clientPromise
+    const db = client.db('productDatabase')
+    return await db
+      .collection<Product>('products')
+      .find({})
+      .sort({ createdAt: -1 })
+      .toArray()
+  } catch (error) {
+    console.error('Failed to fetch products:', error)
+    return []
+  }
+}
+
+function ProductGrid({ products }: { products: Product[] }) {
+  if (products.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500">No products available yet.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+      {products.map((product) => (
+        <div
+          key={product._id.toString()}
+          className="bg-white bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-1"
+        >
+          <div className="relative h-64">
+            <Image
+              src={`data:${product.image.contentType};base64,${product.image.data}`}
+              alt={product.name}
+              layout="fill"
+              objectFit="cover"
+              className="transition-transform duration-300 hover:scale-105"
+            />
+          </div>
+          <div className="p-6">
+            <h2 className="font-bold text-xl mb-2 text-gray-800">
+              {product.name}
+            </h2>
+            <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+              {product.description}
+            </p>
+            <div className="flex justify-between items-center">
+              <span className="text-2xl font-bold text-purple-600">
+                ${product.price.toFixed(2)}
+              </span>
+              <button className="bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700 transition-colors duration-300">
+                View Details
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function LoadingGrid() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+      {[...Array(4)].map((_, i) => (
+        <div
+          key={i}
+          className="bg-white bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-xl overflow-hidden shadow-lg animate-pulse"
+        >
+          <div className="h-64 bg-gray-200" />
+          <div className="p-6 space-y-4">
+            <div className="h-4 bg-gray-200 rounded w-3/4" />
+            <div className="h-4 bg-gray-200 rounded w-1/2" />
+            <div className="flex justify-between items-center pt-4">
+              <div className="h-6 bg-gray-200 rounded w-1/4" />
+              <div className="h-8 bg-gray-200 rounded w-1/3" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 export default async function Home() {
@@ -37,31 +116,9 @@ export default async function Home() {
         <div className="mb-16">
           <ProductUploadForm />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {products.map((product) => (
-            <div key={product._id.toString()} className="bg-white bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
-              <div className="relative h-64">
-                <Image
-                  src={`data:${product.image.contentType};base64,${product.image.data}`}
-                  alt={product.name}
-                  layout="fill"
-                  objectFit="cover"
-                  className="transition-transform duration-300 hover:scale-105"
-                />
-              </div>
-              <div className="p-6">
-                <h2 className="font-bold text-xl mb-2 text-gray-800">{product.name}</h2>
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
-                <div className="flex justify-between items-center">
-                  <span className="text-2xl font-bold text-indigo-600">${product.price.toFixed(2)}</span>
-                  <button className="bg-purple-600 text-white px-4 py-2 rounded-full hover:bg-purple-700 transition-colors duration-300">
-                    View Details
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <Suspense fallback={<LoadingGrid />}>
+          <ProductGrid products={products} />
+        </Suspense>
       </div>
     </div>
   )
