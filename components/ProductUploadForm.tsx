@@ -41,20 +41,19 @@ export default function ProductUploadForm() {
         body: formData,
       })
       
-      if (response.ok) {
-        const data = await response.json()
-        alert(data.message)
-        setFile(null)
-        setName('')
-        setDescription('')
-        setPrice('')
-      } else {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Upload failed')
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
+      
+      const data = await response.json()
+      alert(data.message || 'Product uploaded successfully') //Update is here.  No change needed.
+      setFile(null)
+      setName('')
+      setDescription('')
+      setPrice('')
     } catch (error) {
       console.error('Error:', error)
-      alert(error instanceof Error ? error.message : 'Upload failed')
+      alert('Upload failed. Please try again.')
     } finally {
       setIsUploading(false)
     }

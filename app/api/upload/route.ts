@@ -51,10 +51,7 @@ export async function POST(req: NextRequest) {
       name,
       description,
       price,
-      image: {
-        url: cloudinaryResponse.secure_url,
-        publicId: cloudinaryResponse.public_id,
-      },
+      imageUrl: cloudinaryResponse.secure_url,
       createdAt: new Date(),
     }
 
