@@ -11,8 +11,8 @@ interface Product {
   description: string
   price: number
   image: {
-    data: string
-    contentType: string
+    url: string
+    publicId: string
   }
   createdAt: Date
 }
@@ -50,10 +50,10 @@ function ProductGrid({ products }: { products: Product[] }) {
         >
           <div className="relative h-64">
             <Image
-              src={`data:${product.image.contentType};base64,${product.image.data}`}
+              src={product.image.url}
               alt={product.name}
-              fill
-              style={{ objectFit: 'cover' }}
+              layout="fill"
+              objectFit="cover"
               className="transition-transform duration-300 hover:scale-105"
             />
           </div>

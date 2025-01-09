@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import clientPromise from '@/lib/mongodb'
+import { v2 as cloudinary, UploadApiResponse } from 'cloudinary'
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,17 +23,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: 'File size exceeds 5MB limit' }, { status: 400 })
-    }
-
     const price = parseFloat(priceString)
     if (isNaN(price) || price < 0) {
       return NextResponse.json({ error: 'Invalid price' }, { status: 400 })
     }
 
+    // Upload image to Cloudinary
     const buffer = await file.arrayBuffer()
     const base64Image = Buffer.from(buffer).toString('base64')
+    const cloudinaryResponse = await new Promise<UploadApiResponse>((resolve, reject) => {
+      cloudinary.uploader.upload(`data:${file.type};base64,${base64Image}`, {
+        folder: 'product-showcase'
+      }, (error, result) => {
+        if (error) reject(error)
+        else if (result) resolve(result)
+        else reject(new Error('Cloudinary upload failed without an error'))
+      })
+    })
 
     // Connect to MongoDB
     const client = await clientPromise
@@ -41,8 +52,8 @@ export async function POST(req: NextRequest) {
       description,
       price,
       image: {
-        data: base64Image,
-        contentType: file.type,
+        url: cloudinaryResponse.secure_url,
+        publicId: cloudinaryResponse.public_id,
       },
       createdAt: new Date(),
     }

@@ -1,11 +1,9 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { Upload, X } from 'lucide-react'
 import Image from 'next/image'
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
 export default function ProductUploadForm() {
   const [file, setFile] = useState<File | null>(null)
@@ -13,33 +11,26 @@ export default function ProductUploadForm() {
   const [description, setDescription] = useState('')
   const [price, setPrice] = useState('')
   const [isUploading, setIsUploading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [isFormValid, setIsFormValid] = useState(false)
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    const selectedFile = acceptedFiles[0]
-    if (selectedFile && selectedFile.size <= MAX_FILE_SIZE) {
-      setFile(selectedFile)
-      setError(null)
-    } else {
-      setError('File size exceeds 5MB limit')
-    }
+    setFile(acceptedFiles[0])
   }, [])
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
-    onDrop, 
-    accept: {'image/*': []},
-    maxSize: MAX_FILE_SIZE
-  })
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: {'image/*': []} })
+
+  useEffect(() => {
+    setIsFormValid(!!file && name.trim() !== '' && description.trim() !== '' && price.trim() !== '')
+  }, [file, name, description, price])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!file || !name || !description || !price) return
+    if (!isFormValid) return
 
     setIsUploading(true)
-    setError(null)
 
     const formData = new FormData()
-    formData.append('image', file)
+    formData.append('image', file as Blob)
     formData.append('name', name)
     formData.append('description', description)
     formData.append('price', price)
@@ -57,15 +48,13 @@ export default function ProductUploadForm() {
         setName('')
         setDescription('')
         setPrice('')
-        // Trigger a page refresh to show the new product
-        window.location.reload()
       } else {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Upload failed')
       }
     } catch (error) {
       console.error('Error:', error)
-      setError(error instanceof Error ? error.message : 'Upload failed')
+      alert(error instanceof Error ? error.message : 'Upload failed')
     } finally {
       setIsUploading(false)
     }
@@ -113,16 +102,15 @@ export default function ProductUploadForm() {
                     onChange={(e) => setPrice(e.target.value)}
                     className="block w-full pl-7 pr-12 bg-white bg-opacity-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     placeholder="0.00"
+                    step="0.01"
+                    min="0"
                     required
                   />
                 </div>
               </div>
-              {error && (
-                <div className="text-red-500 text-sm">{error}</div>
-              )}
               <button
                 type="submit"
-                disabled={isUploading || !file}
+                disabled={!isFormValid || isUploading}
                 className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-300"
               >
                 {isUploading ? 'Uploading...' : 'Add Product'}
@@ -162,7 +150,7 @@ export default function ProductUploadForm() {
                   <div className="text-center">
                     <Upload className="mx-auto h-12 w-12 text-white" />
                     <p className="mt-2 text-sm text-white">
-                      Drag & drop an image here, or click to select (max 5MB)
+                      Drag & drop an image here, or click to select
                     </p>
                   </div>
                 )}
