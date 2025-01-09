@@ -10,7 +10,7 @@ interface Product {
   name: string
   description: string
   price: number
-  imageData: string
+  imageUrl: string
   createdAt: Date
 }
 
@@ -47,9 +47,11 @@ function ProductGrid({ products }: { products: Product[] }) {
         >
           <div className="relative h-64">
             <Image
-              src={product.imageData}
+              src={product.imageUrl}
               alt={product.name}
-              layout="fill"
+              width={500}
+              height={500}
+              layout="responsive"
               objectFit="cover"
               className="transition-transform duration-300 hover:scale-105"
             />

@@ -46,11 +46,14 @@ export default function ProductUploadForm() {
       }
       
       const data = await response.json()
-      alert(data.message || 'Product uploaded successfully') //Update is here.  No change needed.
+      alert(data.message || 'Product uploaded successfully')
       setFile(null)
       setName('')
       setDescription('')
       setPrice('')
+      
+      // Refresh the page to show the new product
+      window.location.reload()
     } catch (error) {
       console.error('Error:', error)
       alert('Upload failed. Please try again.')

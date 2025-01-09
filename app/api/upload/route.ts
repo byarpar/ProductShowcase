@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import clientPromise from '@/lib/mongodb'
+import { v2 as cloudinary, UploadApiResponse } from 'cloudinary'
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -21,10 +28,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid price' }, { status: 400 })
     }
 
-    // Convert file to Base64
+    // Upload image to Cloudinary
     const buffer = await file.arrayBuffer()
     const base64Image = Buffer.from(buffer).toString('base64')
-    const imageData = `data:${file.type};base64,${base64Image}`
+    const cloudinaryResponse = await new Promise<UploadApiResponse>((resolve, reject) => {
+      cloudinary.uploader.upload(`data:${file.type};base64,${base64Image}`, {
+        folder: 'product-showcase'
+      }, (error, result) => {
+        if (error) reject(error)
+        else if (result) resolve(result)
+        else reject(new Error('Cloudinary upload failed without an error'))
+      })
+    })
 
     // Connect to MongoDB
     const client = await clientPromise
@@ -36,7 +51,7 @@ export async function POST(req: NextRequest) {
       name,
       description,
       price,
-      imageData,
+      imageUrl: cloudinaryResponse.secure_url,
       createdAt: new Date(),
     }
 
