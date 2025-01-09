@@ -5,6 +5,10 @@ import { ObjectId } from 'mongodb'
 import { Suspense } from 'react'
 import ProductUploadForm from '@/components/ProductUploadForm'
 
+// Force dynamic rendering to ensure fresh data
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface Product {
   _id: ObjectId
   name: string
@@ -29,6 +33,42 @@ async function getProducts(): Promise<Product[]> {
   }
 }
 
+function ProductCard({ product }: { product: Product }) {
+  return (
+    <div
+      className="bg-white bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-1"
+    >
+      <div className="relative aspect-square">
+        <Image
+          src={product.imageUrl}
+          alt={product.name}
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          className="object-cover transition-transform duration-300 hover:scale-105"
+          priority
+          unoptimized // Add this to prevent caching issues
+        />
+      </div>
+      <div className="p-6">
+        <h2 className="font-bold text-xl mb-2 text-gray-800">
+          {product.name}
+        </h2>
+        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+          {product.description}
+        </p>
+        <div className="flex justify-between items-center">
+          <span className="text-2xl font-bold text-purple-600">
+            ${product.price.toFixed(2)}
+          </span>
+          <button className="bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700 transition-colors duration-300">
+            View Details
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ProductGrid({ products }: { products: Product[] }) {
   if (products.length === 0) {
     return (
@@ -41,37 +81,7 @@ function ProductGrid({ products }: { products: Product[] }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
       {products.map((product) => (
-        <div
-          key={product._id.toString()}
-          className="bg-white bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-1"
-        >
-          <div className="relative aspect-square">
-            <Image
-              src={product.imageUrl}
-              alt={product.name}
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className="object-cover transition-transform duration-300 hover:scale-105"
-              priority
-            />
-          </div>
-          <div className="p-6">
-            <h2 className="font-bold text-xl mb-2 text-gray-800">
-              {product.name}
-            </h2>
-            <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-              {product.description}
-            </p>
-            <div className="flex justify-between items-center">
-              <span className="text-2xl font-bold text-purple-600">
-                ${product.price.toFixed(2)}
-              </span>
-              <button className="bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700 transition-colors duration-300">
-                View Details
-              </button>
-            </div>
-          </div>
-        </div>
+        <ProductCard key={product._id.toString()} product={product} />
       ))}
     </div>
   )

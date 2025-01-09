@@ -8,7 +8,11 @@ const nextConfig = {
         pathname: '/**',
       },
     ],
+    unoptimized: true, // Add this to prevent caching issues
   },
+  experimental: {
+    serverActions: true
+  }
 }
 
 module.exports = nextConfig
