@@ -57,6 +57,8 @@ export default function ProductUploadForm() {
         setName('')
         setDescription('')
         setPrice('')
+        // Trigger a page refresh to show the new product
+        window.location.reload()
       } else {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Upload failed')

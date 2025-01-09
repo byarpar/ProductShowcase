@@ -52,8 +52,8 @@ function ProductGrid({ products }: { products: Product[] }) {
             <Image
               src={`data:${product.image.contentType};base64,${product.image.data}`}
               alt={product.name}
-              layout="fill"
-              objectFit="cover"
+              fill
+              style={{ objectFit: 'cover' }}
               className="transition-transform duration-300 hover:scale-105"
             />
           </div>
