@@ -5,24 +5,38 @@ import { useDropzone } from 'react-dropzone'
 import { Upload, X } from 'lucide-react'
 import Image from 'next/image'
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+
 export default function ProductUploadForm() {
   const [file, setFile] = useState<File | null>(null)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [price, setPrice] = useState('')
   const [isUploading, setIsUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    setFile(acceptedFiles[0])
+    const selectedFile = acceptedFiles[0]
+    if (selectedFile && selectedFile.size <= MAX_FILE_SIZE) {
+      setFile(selectedFile)
+      setError(null)
+    } else {
+      setError('File size exceeds 5MB limit')
+    }
   }, [])
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: {'image/*': []} })
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
+    onDrop, 
+    accept: {'image/*': []},
+    maxSize: MAX_FILE_SIZE
+  })
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!file || !name || !description || !price) return
 
     setIsUploading(true)
+    setError(null)
 
     const formData = new FormData()
     formData.append('image', file)
@@ -49,7 +63,7 @@ export default function ProductUploadForm() {
       }
     } catch (error) {
       console.error('Error:', error)
-      alert(error instanceof Error ? error.message : 'Upload failed')
+      setError(error instanceof Error ? error.message : 'Upload failed')
     } finally {
       setIsUploading(false)
     }
@@ -101,9 +115,12 @@ export default function ProductUploadForm() {
                   />
                 </div>
               </div>
+              {error && (
+                <div className="text-red-500 text-sm">{error}</div>
+              )}
               <button
                 type="submit"
-                disabled={isUploading}
+                disabled={isUploading || !file}
                 className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-300"
               >
                 {isUploading ? 'Uploading...' : 'Add Product'}
@@ -143,7 +160,7 @@ export default function ProductUploadForm() {
                   <div className="text-center">
                     <Upload className="mx-auto h-12 w-12 text-white" />
                     <p className="mt-2 text-sm text-white">
-                      Drag & drop an image here, or click to select
+                      Drag & drop an image here, or click to select (max 5MB)
                     </p>
                   </div>
                 )}

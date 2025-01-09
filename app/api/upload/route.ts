@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import clientPromise from '@/lib/mongodb'
-import sharp from 'sharp'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,18 +18,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: 'File size exceeds 5MB limit' }, { status: 400 })
+    }
+
     const price = parseFloat(priceString)
     if (isNaN(price) || price < 0) {
       return NextResponse.json({ error: 'Invalid price' }, { status: 400 })
     }
 
-    // Process and resize image
     const buffer = await file.arrayBuffer()
-    const resizedImageBuffer = await sharp(buffer)
-      .resize(800, 600, { fit: 'inside', withoutEnlargement: true })
-      .toBuffer()
-
-    const base64Image = resizedImageBuffer.toString('base64')
+    const base64Image = Buffer.from(buffer).toString('base64')
 
     // Connect to MongoDB
     const client = await clientPromise
