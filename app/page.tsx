@@ -45,15 +45,14 @@ function ProductGrid({ products }: { products: Product[] }) {
           key={product._id.toString()}
           className="bg-white bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-1"
         >
-          <div className="relative h-64">
+          <div className="relative aspect-square">
             <Image
               src={product.imageUrl}
               alt={product.name}
-              width={500}
-              height={500}
-              layout="responsive"
-              objectFit="cover"
-              className="transition-transform duration-300 hover:scale-105"
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-cover transition-transform duration-300 hover:scale-105"
+              priority
             />
           </div>
           <div className="p-6">
@@ -86,7 +85,7 @@ function LoadingGrid() {
           key={i}
           className="bg-white bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-xl overflow-hidden shadow-lg animate-pulse"
         >
-          <div className="h-64 bg-gray-200" />
+          <div className="aspect-square bg-gray-200" />
           <div className="p-6 space-y-4">
             <div className="h-4 bg-gray-200 rounded w-3/4" />
             <div className="h-4 bg-gray-200 rounded w-1/2" />

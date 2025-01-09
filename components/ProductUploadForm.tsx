@@ -7,6 +7,7 @@ import Image from 'next/image'
 
 export default function ProductUploadForm() {
   const [file, setFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [price, setPrice] = useState('')
@@ -14,14 +15,29 @@ export default function ProductUploadForm() {
   const [isFormValid, setIsFormValid] = useState(false)
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    setFile(acceptedFiles[0])
+    const file = acceptedFiles[0]
+    setFile(file)
+    setPreviewUrl(URL.createObjectURL(file))
   }, [])
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: {'image/*': []} })
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
+    onDrop, 
+    accept: {'image/*': []},
+    maxSize: 5 * 1024 * 1024 // 5MB max
+  })
 
   useEffect(() => {
     setIsFormValid(!!file && name.trim() !== '' && description.trim() !== '' && price.trim() !== '')
   }, [file, name, description, price])
+
+  useEffect(() => {
+    // Cleanup preview URL when component unmounts or when file changes
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+      }
+    }
+  }, [previewUrl])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -42,12 +58,16 @@ export default function ProductUploadForm() {
       })
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Upload failed')
       }
       
-      const data = await response.json()
-      alert(data.message || 'Product uploaded successfully')
+      await response.json()
+      alert('Product uploaded successfully!')
+      
+      // Reset form
       setFile(null)
+      setPreviewUrl(null)
       setName('')
       setDescription('')
       setPrice('')
@@ -56,9 +76,18 @@ export default function ProductUploadForm() {
       window.location.reload()
     } catch (error) {
       console.error('Error:', error)
-      alert('Upload failed. Please try again.')
+      alert(error instanceof Error ? error.message : 'Upload failed. Please try again.')
     } finally {
       setIsUploading(false)
+    }
+  }
+
+  const handleRemoveImage = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setFile(null)
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+      setPreviewUrl(null)
     }
   }
 
@@ -129,20 +158,17 @@ export default function ProductUploadForm() {
                 }`}
               >
                 <input {...getInputProps()} />
-                {file ? (
+                {previewUrl ? (
                   <div className="relative">
                     <Image 
-                      src={URL.createObjectURL(file)} 
-                      alt="Product preview" 
+                      src={previewUrl}
+                      alt="Product preview"
                       width={192}
                       height={192}
                       className="max-h-48 rounded-lg object-cover"
                     />
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setFile(null)
-                      }}
+                      onClick={handleRemoveImage}
                       className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors duration-300"
                     >
                       <X size={16} />
@@ -153,6 +179,9 @@ export default function ProductUploadForm() {
                     <Upload className="mx-auto h-12 w-12 text-white" />
                     <p className="mt-2 text-sm text-white">
                       Drag & drop an image here, or click to select
+                    </p>
+                    <p className="mt-1 text-xs text-white opacity-75">
+                      Maximum file size: 5MB
                     </p>
                   </div>
                 )}
