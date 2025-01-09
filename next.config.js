@@ -9,9 +9,6 @@ const nextConfig = {
       },
     ],
     unoptimized: true, // Add this to prevent caching issues
-  },
-  experimental: {
-    serverActions: true
   }
 }
 
