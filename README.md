@@ -60,6 +60,14 @@ yarn dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+View Demo_(https://product-showcase-pearl.vercel.app/)
+
+
+
+
+
+
+
 ## Project Structure
 
 - `/app`: Contains the main application code
